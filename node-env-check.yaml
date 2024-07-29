@@ -1,0 +1,12 @@
+http_addr: 0.0.0.0:8092 # 这里不能写localhost
+
+check_job_info:
+  run_check_job_batch: 5 #巡检任务并发数
+  run_host_batch: 200 #每个巡检任务机器的并发数
+  job_complete_minutes: 5 #作业多长时间认为结束
+  check_server_addr: "http://loaclhost/node-env-check" #agent连接server的地址，获取基线的地址
+  node_run_check_dir: "/tmp/node-env-check" #agent的执行目录
+  agent_bin_download_addr: "http://loaclhost/static-file/node-env-check-agent_v1.0" #agent的下载地址
+  check_submit_job_interval_seconds: 30 #周期参数
+  complate_job_interval_seconds: 60
+  metrics_job_interval_seconds: 30
