@@ -18,23 +18,25 @@ func (this *FailedNameResult) TableName() string {
 }
 
 func (this *FailedNameResult) CreateOrUpdate() error {
-	var failedNameResul FailedNameResult
 	table := database.DB.Table(this.TableName())
-	if err := table.Debug().Where("name = ?", this.JobId).First(&failedNameResul).Error; err != nil {
+	if this.JobId != 0 {
+		table = table.Where("name = ?", this.JobId)
+	}
+
+	var failedNameResul FailedNameResult
+	if err := table.Debug().First(&failedNameResul).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			if err = table.Debug().Create(this).Error; err != nil {
 				return err
 			}
 		}
 		return err
+	} else {
+		if err := table.Updates(this).Error; err != nil {
+			return err
+		}
 	}
-	if this.JobId != 0 {
-		failedNameResul.JobId = this.JobId
-		table = table.Where("name = ?", this.JobId)
-	}
-	if err := table.Updates(this).Error; err != nil {
-		return err
-	}
+
 	return nil
 }
 

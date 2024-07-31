@@ -15,36 +15,50 @@ func (this *CheckScript) TableName() string {
 	return "check_script_t"
 }
 
-func (this *CheckScript) CreateOrUpdate() error {
-	var checkScript CheckScript
+func (this *CheckScript) CreateOneOrUpdate() (uint, error) {
 	table := database.DB.Table(this.TableName())
-	if err := table.Debug().Where("name = ?", this.Name).First(&checkScript).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			if err = table.Debug().Create(this).Error; err != nil {
-				return err
-			}
-		}
-		return err
-	}
 	if this.Name != "" {
-		checkScript.Name = this.Name
 		table = table.Where("name = ?", this.Name)
 	}
-	if err := table.Updates(this).Error; err != nil {
-		return err
+	var checkScript CheckScript
+	if err := table.Debug().First(&checkScript).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			if err = table.Debug().Create(this).Error; err != nil {
+				return this.ID, err
+			}
+		}
+		return this.ID, err
+	} else {
+
+		if err := table.Updates(this).Error; err != nil {
+			return this.ID, err
+		}
 	}
-	return nil
+
+	return this.ID, nil
+}
+
+func (this *CheckScript) CreateOne() (uint, error) {
+	table := database.DB.Table(this.TableName())
+
+	if err := table.Debug().Create(this).Error; err != nil {
+		return this.ID, err
+	}
+
+	return this.ID, nil
 }
 
 func (this *CheckScript) Update() error {
+
 	table := database.DB.Table(this.TableName())
-	var checkScript CheckScript
 	if this.Name != "" {
-		checkScript.Name = this.Name
 		table = table.Where("name = ?", this.Name)
 	}
-
-	if err := table.Updates(&checkScript).Error; err != nil {
+	var checkScript CheckScript
+	if err := table.Debug().First(&checkScript).Error; err != nil {
+		return err
+	}
+	if err := table.Debug().Updates(this).Error; err != nil {
 		return err
 	}
 	return nil
@@ -79,4 +93,20 @@ func (this *CheckScript) Delete() error {
 		return err
 	}
 	return nil
+}
+
+func (this *CheckScript) CheckExist() (bool, error) {
+	var (
+		checkScript CheckScript
+	)
+	table := database.DB.Table(this.TableName())
+	if this.Name != "" {
+		table = table.Where("name = ?", this.Name)
+	}
+
+	if err := table.Debug().First(&checkScript).Error; err != nil {
+		return false, err
+	}
+
+	return true, nil
 }

@@ -24,15 +24,15 @@ type CmdInfoConf struct {
 }
 
 type CheckJobConf struct {
-	RunCheckJobBatch             int     `yaml:"run_check_job_batch"`
-	RunHostBatch                 int     `yaml:"run_host_batch"`
-	JobComplateMinutes           float64 `yaml:"job_complate_minutes"`
-	CheckServerAddr              string  `yaml:"check_server_addr"`
-	NodeRunCheckdir              string  `yaml:"node_run_checkdir"`
-	AgentBinDownloadAddr         string  `yaml:"agent_bin_download_addr"`
-	CheckSubitJobIntervalSeconds int     `yaml:"check_subit_job_interval_seconds"`
-	ComplateJobIntervalSeconds   int     `yaml:"complate_job_interval_seconds"`
-	MetricsJobIntervalSeconds    int     `yaml:"metrics_job_interval_seconds"`
+	RunCheckJobBatch              int     `yaml:"run_check_job_batch"`
+	RunHostBatch                  int     `yaml:"run_host_batch"`
+	JobCompleteMinutes            float64 `yaml:"job_complete_minutes"`
+	CheckServerAddr               string  `yaml:"check_server_addr"`
+	NodeRunCheckDir               string  `yaml:"node_run_check_dir"`
+	AgentBinDownloadAddr          string  `yaml:"agent_bin_download_addr"`
+	CheckSubmitJobIntervalSeconds int     `yaml:"check_submit_job_interval_seconds"`
+	CompleteJobIntervalSeconds    int     `yaml:"complete_job_interval_seconds"`
+	MetricsJobIntervalSeconds     int     `yaml:"metrics_job_interval_seconds"`
 }
 
 func LoadFile(filename string) (*Config, error) {

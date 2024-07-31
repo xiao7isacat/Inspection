@@ -16,35 +16,49 @@ func (this *DesiredResult) TableName() string {
 }
 
 func (this *DesiredResult) CreateOrUpdate() error {
-	var desiredResult DesiredResult
 	table := database.DB.Table(this.TableName())
-	if err := table.Debug().Where("name = ?", this.Name).First(&desiredResult).Error; err != nil {
+	if this.Name != "" {
+		table = table.Where("name = ?", this.Name)
+	}
+	var desiredResult DesiredResult
+
+	if err := table.Debug().First(&desiredResult).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			if err = table.Debug().Create(this).Error; err != nil {
 				return err
 			}
 		}
 		return err
+	} else {
+		if err := table.Updates(this).Error; err != nil {
+			return err
+		}
 	}
-	if this.Name != "" {
-		desiredResult.Name = this.Name
-		table = table.Where("name = ?", this.Name)
-	}
-	if err := table.Updates(this).Error; err != nil {
-		return err
-	}
+
 	return nil
+}
+
+func (this *DesiredResult) CreateOne() (uint, error) {
+	table := database.DB.Table(this.TableName())
+
+	if err := table.Debug().Create(this).Error; err != nil {
+		return this.ID, err
+	}
+
+	return this.ID, nil
 }
 
 func (this *DesiredResult) Update() error {
 	table := database.DB.Table(this.TableName())
-	var desiredResult DesiredResult
 	if this.Name != "" {
-		desiredResult.Name = this.Name
 		table = table.Where("name = ?", this.Name)
 	}
+	var desiredResult DesiredResult
+	if err := table.Debug().First(&desiredResult).Error; err != nil {
+		return err
+	}
 
-	if err := table.Updates(&desiredResult).Error; err != nil {
+	if err := table.Debug().Updates(this).Error; err != nil {
 		return err
 	}
 	return nil

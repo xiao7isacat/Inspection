@@ -11,12 +11,12 @@ type CheckJob struct {
 	ScriptName     string `json:"script_name" gorm:"varchar(10);not null"`                     //脚本名称
 	ClusterName    string `json:"cluster_name" gorm:"varchar(20)"`                             //集群名称
 	DesiredName    string `json:"desired_name" gorm:"varchar(20);not null"`                    //基线名称
-	IpJson         string `json:"content_json" gorm:"text"`                                    //机器的列表
-	JobHasSynced   int    `json:"job_has_synced"`                                              //任务是否被同步
-	JobHasComplate int    `json:"job_has_complate"`                                            //任务是否完成
-	AllNum         int    `json:"all_num"`                                                     //任务数量
-	SuccessNum     int    `json:"success_num"`                                                 //成功数量
-	FailedNum      int    `json:"failed_num"`                                                  //失败数量
+	IpJson         string `json:"ip_json" gorm:"text"`                                         //机器的列表
+	JobHasSynced   int64  `json:"job_has_synced"`                                              //任务是否被同步
+	JobHasComplete int64  `json:"job_has_complete"`                                            //任务是否完成
+	AllNum         int64  `json:"all_num"`                                                     //任务数量
+	SuccessNum     int64  `json:"success_num"`                                                 //成功数量
+	FailedNum      int64  `json:"failed_num"`                                                  //失败数量
 }
 
 func (this *CheckJob) TableName() string {
@@ -24,24 +24,35 @@ func (this *CheckJob) TableName() string {
 }
 
 func (this *CheckJob) CreateOrUpdate() error {
-	var checkJob CheckJob
+
 	table := database.DB.Table(this.TableName())
-	if err := table.Debug().Where("name = ?", this.Name).First(&checkJob).Error; err != nil {
+	if this.Name != "" {
+		table = table.Where("name = ?", this.Name)
+	}
+	var checkJob CheckJob
+	if err := table.Debug().First(&checkJob).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			if err = table.Debug().Create(this).Error; err != nil {
 				return err
 			}
 		}
 		return err
-	}
-	if this.Name != "" {
-		checkJob.Name = this.Name
-		table = table.Where("name = ?", this.Name)
-	}
-	if err := table.Updates(this).Error; err != nil {
-		return err
+	} else {
+		if err := table.Updates(this).Error; err != nil {
+			return err
+		}
 	}
 	return nil
+}
+
+func (this *CheckJob) CreateOne() (uint, error) {
+	table := database.DB.Table(this.TableName())
+
+	if err := table.Debug().Create(this).Error; err != nil {
+		return this.ID, err
+	}
+
+	return this.ID, nil
 }
 
 func (this *CheckJob) Update() error {
@@ -52,26 +63,29 @@ func (this *CheckJob) Update() error {
 		table = table.Where("name = ?", this.Name)
 	}
 
-	if err := table.Updates(&checkJob).Error; err != nil {
+	if err := table.Updates(this).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
-func (this *CheckJob) GetOne() error {
+func (this *CheckJob) GetOne() (uint, error) {
+
 	table := database.DB.Table(this.TableName())
-	if this.Name != "" {
-		table = table.Where("name = ?", this.Name)
+
+	if err := table.Debug().Create(this).Error; err != nil {
+		return this.ID, err
 	}
-	if err := table.Debug().First(this).Error; err != nil {
-		return err
-	}
-	return nil
+
+	return this.ID, nil
 }
 
-func (this *CheckJob) GetList() ([]CheckJob, error) {
+func (this *CheckJob) GetList(getNotSync bool) ([]CheckJob, error) {
 	var checkJobList []CheckJob
 	table := database.DB.Table(this.TableName())
+	if getNotSync {
+		table.Where("job_has_synced = 0")
+	}
 	if err := table.Debug().Find(&checkJobList).Error; err != nil {
 		return checkJobList, err
 	}

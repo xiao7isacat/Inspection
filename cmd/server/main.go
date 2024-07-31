@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"inspection/database"
 	"inspection/global"
 	"inspection/models"
+	"inspection/pkg/check"
 	"inspection/pkg/config"
 	esl "inspection/pkg/signal"
 	"inspection/pkg/web"
@@ -34,6 +34,8 @@ func main() {
 	}
 
 	models.AutoMigrat()
+	//new manger
+	cm := check.NewCheckJobManger(sConfig)
 
 	//接受信号，开始编排
 	group, stopChan := esl.SetupStopSignalContext()
@@ -57,7 +59,7 @@ func main() {
 		klog.Infof("[metrics web start backend]")
 		errChan := make(chan error)
 		go func() {
-			errChan <- web.StartServer(sConfig)
+			errChan <- web.StartServer(sConfig, cm)
 		}()
 
 		select {
@@ -70,7 +72,16 @@ func main() {
 		}
 	})
 
-	fmt.Println(ctlAll)
+	//开启作业下发的任务检查
+	group.Go(func() error {
+		klog.Infof("[cm.RunCronJobManager start backend]")
+		err := cm.Run(ctlAll)
+		if err != nil {
+			klog.Errorf("[cm.RunCronJobManager.error][err:%v]", err)
+
+		}
+		return err
+	})
 	if err := group.Wait(); err != nil {
 		//pianc
 		klog.Fatal(err)

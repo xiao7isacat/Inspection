@@ -7,6 +7,6 @@ check_job_info:
   check_server_addr: "http://loaclhost/node-env-check" #agent连接server的地址，获取基线的地址
   node_run_check_dir: "/tmp/node-env-check" #agent的执行目录
   agent_bin_download_addr: "http://loaclhost/static-file/node-env-check-agent_v1.0" #agent的下载地址
-  check_submit_job_interval_seconds: 30 #周期参数
-  complate_job_interval_seconds: 60
+  check_submit_job_interval_seconds: 30 #下发任务的周期参数
+  complete_job_interval_seconds: 60
   metrics_job_interval_seconds: 30

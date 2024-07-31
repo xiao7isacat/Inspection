@@ -12,7 +12,7 @@ func configRouters(r *gin.Engine) {
 	})
 	api.GET("now-ts", GetNowTs)
 
-	/*api.POST("/check-script", CheckScriptAdd)
+	api.POST("/check-script", CheckScriptAdd)
 	api.PUT("/check-script", CheckScriptPuts)
 	api.GET("/check-script", CheckScriptGets)
 	api.GET("/one-check-script", CheckScriptGetByName)
@@ -23,11 +23,11 @@ func configRouters(r *gin.Engine) {
 	api.GET("/one-desired-result", DesiredResultByName)
 
 	api.POST("/check-job", CheckJobAdd)
-	api.POST("/cron-job", CronJobAdd)
+	//api.POST("/cron-job", CronJobAdd)
 	api.GET("/check-job", CheckJobGets)
 
-	api.POST("/node-result-report", NodeResultReport)
-	*/
+	//api.POST("/node-result-report", NodeResultReport)
+
 }
 
 func GetNowTs(c *gin.Context) {

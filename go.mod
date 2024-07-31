@@ -11,6 +11,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/sqlite v1.5.6
 	gorm.io/gorm v1.25.11
+	k8s.io/apimachinery v0.30.3
 	k8s.io/klog/v2 v2.130.1
 )
 
@@ -64,4 +65,5 @@ require (
 	golang.org/x/text v0.16.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	k8s.io/utils v0.0.0-20230726121419-3b25d923346b // indirect
 )

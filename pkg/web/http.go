@@ -3,6 +3,7 @@ package web
 import (
 	"github.com/gin-gonic/gin"
 	ginprometheus "github.com/zsais/go-gin-prometheus"
+	"inspection/pkg/check"
 	"inspection/pkg/common"
 	"inspection/pkg/config"
 	"k8s.io/klog/v2"
@@ -10,7 +11,7 @@ import (
 	"time"
 )
 
-func StartServer(cf *config.Config) error {
+func StartServer(cf *config.Config, cm *check.CheckJobManger) error {
 	r := gin.New()
 	gin.SetMode(gin.ReleaseMode)
 	gin.DisableConsoleColor()
@@ -18,10 +19,12 @@ func StartServer(cf *config.Config) error {
 	p := ginprometheus.NewPrometheus("gin")
 	p.Use(r)
 
-	//外部指针传递给gin，在view中使用
+	// 外部指针变量传递给gin，在view中使用
 	m := make(map[string]interface{})
-	m[common.CheckJobManager] = ""
+	m[common.CheckJobManager] = cm
 	r.Use(ConfigMiddleware(m))
+
+	//路由
 	configRouters(r)
 	s := &http.Server{
 		Addr:              cf.HttpAddr,
