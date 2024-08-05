@@ -1,0 +1,21 @@
+- name:  span_job
+  hosts: all
+  user: root
+  gather_facts:  false
+  tasks:
+
+      - name: submit_job
+        shell:  |-
+          # 创建目录
+          [ ! -d "{{ thisJobDir }}" ] &&  mkdir -pv {{ thisJobDir }} 
+          # 下载agent的二进制
+          {{ checkBinVersionOrDownloadCmd }}
+          # curl 获取脚本
+          curl {{ CheckServerAddr  }}/api/v1/one-check-script?script_name={{ ScriptName }} > {{  scriptFilePath }}
+          # curl 获取基线
+          curl {{ CheckServerAddr  }}/api/v1/one-desired-result?result_name={{ DesiredName }} > {{  resultFilePath }}
+          # chmodCmd
+          chmod +x  {{ NodeRunCheckDir }}/*
+          # agent执行 ，并且给agent传参
+          {{ binFilePath }} -job_id={{ jobId }} -report_addr={{ reportUrl }} -result_path={{ resultFilePath }} -script_path={{ scriptFilePath }} &
+          

@@ -18,6 +18,7 @@ func main() {
 	klog.InitFlags(flag.CommandLine)
 	flag.StringVar(&global.ConfigFile, "config", "./node-env-check.yaml", "config file")
 	flag.StringVar(&global.Database, "database", "sqlite", "dbname")
+	flag.StringVar(&global.SubmitJobYamlPath, "submit_job_yaml_path", "submit_job.yaml", "The config yml")
 	flag.Parse()
 
 	sConfig, err := config.LoadFile(global.ConfigFile)
@@ -26,7 +27,6 @@ func main() {
 		return
 	}
 	klog.V(2).Infof("config.LoadFile.success.print:%+v", sConfig)
-
 	//初始db连接
 	if err := database.ConnectDb(global.Database); err != nil {
 		klog.Errorln("database:", global.Database, "error: ", err)

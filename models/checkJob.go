@@ -7,16 +7,18 @@ import (
 
 type CheckJob struct {
 	gorm.Model
-	Name           string `json:"name" gorm:"varchar(10);not null;index:idx_check_job,unique"` //任务名称
-	ScriptName     string `json:"script_name" gorm:"varchar(10);not null"`                     //脚本名称
-	ClusterName    string `json:"cluster_name" gorm:"varchar(20)"`                             //集群名称
-	DesiredName    string `json:"desired_name" gorm:"varchar(20);not null"`                    //基线名称
-	IpJson         string `json:"ip_json" gorm:"text"`                                         //机器的列表
-	JobHasSynced   int64  `json:"job_has_synced"`                                              //任务是否被同步
-	JobHasComplete int64  `json:"job_has_complete"`                                            //任务是否完成
-	AllNum         int64  `json:"all_num"`                                                     //任务数量
-	SuccessNum     int64  `json:"success_num"`                                                 //成功数量
-	FailedNum      int64  `json:"failed_num"`                                                  //失败数量
+	Name           string   `json:"name" gorm:"varchar(10);not null;index:idx_check_job,unique"` //任务名称
+	ScriptName     string   `json:"script_name" gorm:"varchar(10);not null"`                     //脚本名称
+	ClusterName    string   `json:"cluster_name" gorm:"varchar(20)"`                             //集群名称
+	DesiredName    string   `json:"desired_name" gorm:"varchar(20);not null"`                    //基线名称
+	IpJson         string   `json:"ip_json" gorm:"text"`                                         //机器的列表
+	JobHasSynced   int64    `json:"job_has_synced"`                                              //任务是否被同步
+	JobHasComplete int64    `json:"job_has_complete"`                                            //任务是否完成
+	IpList         []string `gorm:"-" json:"ip_list"`
+
+	AllNum     int64 `json:"all_num"`     //任务数量
+	SuccessNum int64 `json:"success_num"` //成功数量
+	FailedNum  int64 `json:"failed_num"`  //失败数量
 }
 
 func (this *CheckJob) TableName() string {
