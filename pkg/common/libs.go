@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/apenella/go-ansible/pkg/execute"
 	"github.com/apenella/go-ansible/pkg/stdoutcallback/results"
+	"k8s.io/klog/v2"
 	"time"
 
 	"github.com/apenella/go-ansible/pkg/options"
@@ -38,10 +39,9 @@ func AnsiRunPlay(remoteHost string, extraVars map[string]interface{}, ansiYamlPa
 				results.Prepend("prome-shard"),
 			),
 		),
-
-		//StdoutCallback: "json",
 	}
 
+	klog.Info(lplaybook.String())
 	err := lplaybook.Run(ctx)
 	return err
 }

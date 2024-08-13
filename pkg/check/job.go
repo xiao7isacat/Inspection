@@ -136,6 +136,7 @@ func (this *CheckJobManger) SubmitJob(job *models.CheckJob) {
 		"reportUrl":                    reportUrl,
 	}
 	ansiYamlPath := global.SubmitJobYamlPath
+	klog.V(2).Infof("SubmitJob.ips.common.AnsiRunPlay.print[job:%v] start", job.Name)
 	if err := common.AnsiRunPlay(remoteHost, extraVars, ansiYamlPath); err != nil {
 		klog.Errorf("SubmitJob.ips.common.AnsiRunPlay.print[job:%v][extraVars:%v][err:%v]", job.Name, extraVars, err)
 		return
@@ -143,7 +144,7 @@ func (this *CheckJobManger) SubmitJob(job *models.CheckJob) {
 
 	job.JobHasSynced = 1
 	if err := job.Update(); err != nil {
-		klog.Infof("SubmitJob.job.SetJobHasSynced.print[job:%v][update: false]", job.Name)
+		klog.Infof("SubmitJob.job.SetJobHasSynced.print[job:%v]update: false", job.Name)
 		klog.V(2).Infof("SubmitJob.job.SetJobHasSynced.print[job:%v][update: false][err:%v]", job.Name, err)
 		return
 	}

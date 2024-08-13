@@ -2,10 +2,17 @@ package web
 
 import (
 	"github.com/gin-gonic/gin"
+	"log"
+	"net/http"
+	"os"
 	"time"
 )
 
 func configRouters(r *gin.Engine) {
+
+	r.StaticFS("static-file", http.Dir("static-file"))
+	log.Println(os.Getwd())
+
 	api := r.Group("/api/v1")
 	api.GET("healthy", func(c *gin.Context) {
 		c.String(200, "ok")
