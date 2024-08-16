@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func StartServer(cf *config.Config, cm *check.CheckJobManger) error {
+func StartServer(cf *config.Config, cm *check.CheckJobManager) error {
 	r := gin.New()
 	gin.SetMode(gin.ReleaseMode)
 	gin.DisableConsoleColor()

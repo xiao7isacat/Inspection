@@ -12,13 +12,15 @@ type CheckJob struct {
 	ClusterName    string   `json:"cluster_name" gorm:"varchar(20)"`                             //集群名称
 	DesiredName    string   `json:"desired_name" gorm:"varchar(20);not null"`                    //基线名称
 	IpJson         string   `json:"ip_json" gorm:"text"`                                         //机器的列表
-	JobHasSynced   int64    `json:"job_has_synced"`                                              //任务是否被同步
-	JobHasComplete int64    `json:"job_has_complete"`                                            //任务是否完成
+	JobHasSynced   int      `json:"job_has_synced" gorm:"job_has_synced"`                        //任务是否被同步
+	JobHasComplete int      `json:"job_has_complete" gorm:"job_has_complete"`                    //任务是否完成
 	IpList         []string `gorm:"-" json:"ip_list"`
 
-	AllNum     int64 `json:"all_num"`     //任务数量
-	SuccessNum int64 `json:"success_num"` //成功数量
-	FailedNum  int64 `json:"failed_num"`  //失败数量
+	JobWaitCompleteMinutes int64 `gorm:"job_wait_complete_minutes" json:"job_wait_complete_minutes"`
+
+	AllNum     int64 `json:"all_num" gorm:"all_num"`         //任务数量
+	SuccessNum int64 `json:"success_num" gorm:"success_num"` //成功数量
+	FailedNum  int64 `json:"failed_num" gorm:"failed_num"`   //失败数量
 }
 
 func (this *CheckJob) TableName() string {
@@ -82,12 +84,31 @@ func (this *CheckJob) GetOne() (uint, error) {
 	return this.ID, nil
 }
 
-func (this *CheckJob) GetList(getNotSync bool) ([]CheckJob, error) {
-	var checkJobList []CheckJob
+func (this *CheckJob) GetList() ([]*CheckJob, error) {
+	var checkJobList []*CheckJob
 	table := database.DB.Table(this.TableName())
-	if getNotSync {
-		table.Where("job_has_synced = 0")
+	if err := table.Debug().Find(&checkJobList).Error; err != nil {
+		return checkJobList, err
 	}
+	return checkJobList, nil
+}
+
+func (this *CheckJob) GetNotSyncList() ([]*CheckJob, error) {
+	var checkJobList []*CheckJob
+	table := database.DB.Table(this.TableName())
+	table.Where("job_has_synced = 0")
+
+	if err := table.Debug().Find(&checkJobList).Error; err != nil {
+		return checkJobList, err
+	}
+	return checkJobList, nil
+}
+
+func (this *CheckJob) GetNotCompleteList() ([]*CheckJob, error) {
+	var checkJobList []*CheckJob
+	table := database.DB.Table(this.TableName())
+	table.Where("job_has_complete = 0")
+
 	if err := table.Debug().Find(&checkJobList).Error; err != nil {
 		return checkJobList, err
 	}

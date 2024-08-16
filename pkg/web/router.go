@@ -33,7 +33,7 @@ func configRouters(r *gin.Engine) {
 	//api.POST("/cron-job", CronJobAdd)
 	api.GET("/check-job", CheckJobGets)
 
-	//api.POST("/node-result-report", NodeResultReport)
+	api.POST("/node-result-report", NodeResultReport)
 
 }
 

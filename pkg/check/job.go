@@ -7,7 +7,6 @@ import (
 	"github.com/gammazero/workerpool"
 	"inspection/global"
 	"inspection/models"
-	"inspection/pkg"
 	"inspection/pkg/common"
 	"inspection/pkg/config"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -17,7 +16,7 @@ import (
 )
 
 // 检测的管理器
-type CheckJobManger struct {
+type CheckJobManager struct {
 	//配置文件
 	Cg      *config.CheckJobConf
 	Version string
@@ -25,16 +24,15 @@ type CheckJobManger struct {
 
 const (
 	AgentBinName = "node-env-check-agent"
-	Version      = pkg.AgentVersion
 )
 
 // 初始化
-func NewCheckJobManger(cg *config.Config) *CheckJobManger {
-	return &CheckJobManger{Cg: cg.CheckJobC}
+func NewCheckJobManger(cg *config.Config) *CheckJobManager {
+	return &CheckJobManager{Cg: cg.CheckJobC}
 }
 
 // 周期性检查数据库中是否有未下发的作业，有未下发的作业就下发
-func (this *CheckJobManger) Run(ctx context.Context) error {
+func (this *CheckJobManager) Run(ctx context.Context) error {
 	//使用k8s中的wait库，周期性执行
 	go wait.UntilWithContext(ctx, this.SpanCheckJob, time.Duration(this.Cg.CheckSubmitJobIntervalSeconds)*time.Second)
 	<-ctx.Done()
@@ -43,9 +41,9 @@ func (this *CheckJobManger) Run(ctx context.Context) error {
 }
 
 // 下发任务
-func (this *CheckJobManger) SpanCheckJob(ctx context.Context) {
+func (this *CheckJobManager) SpanCheckJob(ctx context.Context) {
 	var checkJob models.CheckJob
-	ljs, err := checkJob.GetList(true)
+	ljs, err := checkJob.GetNotSyncList()
 	if err != nil {
 		klog.Errorf("models.CronJobGetUnDone.err:%v", err)
 		return
@@ -66,7 +64,7 @@ func (this *CheckJobManger) SpanCheckJob(ctx context.Context) {
 			continue
 		}
 		wp.Submit(func() {
-			this.SubmitJob(&job)
+			this.SubmitJob(job)
 		})
 	}
 	wp.StopWait()
@@ -75,13 +73,13 @@ func (this *CheckJobManger) SpanCheckJob(ctx context.Context) {
 
 }
 
-// 下发
-func (this *CheckJobManger) SubmitJob(job *models.CheckJob) {
+// 单个任务下发
+func (this *CheckJobManager) SubmitJob(job *models.CheckJob) {
 	remoteHost := strings.Join(job.IpList, ",")
 
 	binFilePath := fmt.Sprintf("%s/%s",
 		this.Cg.NodeRunCheckDir,
-		AgentBinName,
+		global.AgentBinName,
 	)
 	thisJobDir := fmt.Sprintf("%s/%d_%s", this.Cg.NodeRunCheckDir, job.ID, job.Name)
 
@@ -117,7 +115,7 @@ func (this *CheckJobManger) SubmitJob(job *models.CheckJob) {
 	   # chmodCmd
 	   chmod +x  {{ NodeRunCheckDir }}/*
 	   # agent执行 ，并且给agent传参
-	   {{ binFilePath }} -job_id={{ jobId }} -report_addr={{ reportUrl }} -result_path={{ resultFilePath }} -script_path={{ scriptFilePath }} &
+	   {{ binFilePath }} -job_id={{ jobId }} -server_addr={{ reportUrl }} -result_path={{ resultFilePath }} -script_path={{ scriptFilePath }} &
 
 
 	*/
@@ -150,4 +148,47 @@ func (this *CheckJobManger) SubmitJob(job *models.CheckJob) {
 	}
 
 	klog.Infof("SubmitJob.job.SetJobHasSynced.print[job:%v][updated:%v]", job.Name)
+}
+
+// 周期性的统计作业的成功 失败数量  标志位是 job_has_compute
+func (cm *CheckJobManager) RunComputeJobManager(ctx context.Context) error {
+	go wait.UntilWithContext(ctx, cm.ComputeCheckJob, time.Duration(cm.Cg.CompleteJobIntervalSeconds)*time.Second)
+	<-ctx.Done()
+	klog.Infof("RunComputeJobManager.exit.receive_quit_signal")
+	return nil
+}
+
+func (cm *CheckJobManager) ComputeCheckJob(ctx context.Context) {
+	// 获取还需要统计
+	var checkJob models.CheckJob
+	jobs, err := checkJob.GetNotCompleteList()
+	if err != nil {
+		klog.Errorf("models.CheckJobGetUnCompute.err:%v", err)
+		return
+	}
+	if len(jobs) == 0 {
+		klog.Warning("models.CheckJobGetUnCompute.zero")
+		return
+	}
+
+	klog.Infof("models.CheckJobGetUnCompute.num:%v", len(jobs))
+	wp := workerpool.New(cm.Cg.RunCheckJobBatch)
+	for i := 0; i < len(jobs); i++ {
+		job := jobs[i]
+		// 因为机器比较多，还没上报完，这时候统计的成功失败数量是 不准的
+		if time.Now().Sub(job.UpdatedAt).Minutes() < float64(job.JobWaitCompleteMinutes) {
+			klog.Infof("models.CheckJobGetUnCompute.still.in.wait:%v", job.Name)
+			continue
+		}
+
+		wp.Submit(func() {
+			// 启动任务
+			cm.ComputeOneJob(job)
+		})
+	}
+	wp.StopWait()
+}
+
+func (cm *CheckJobManager) ComputeOneJob(cj *models.CheckJob) {
+
 }

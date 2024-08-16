@@ -16,7 +16,7 @@
         # chmodCmd
         chmod +x  {{ NodeRunCheckDir }}/*
         # agent执行 ，并且给agent传参
-        {{ binFilePath }} -job_id={{ jobId }} -report_addr={{ reportUrl }} -result_path={{ resultFilePath }} -script_path={{ scriptFilePath }} &
+        {{ binFilePath }} -job_id={{ jobId }} -server_addr={{ reportUrl }} -result_path={{ resultFilePath }} -script_path={{ scriptFilePath }} &
       register: test
     - name: print
       debug:

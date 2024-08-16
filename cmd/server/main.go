@@ -82,6 +82,7 @@ func main() {
 		}
 		return err
 	})
+
 	if err := group.Wait(); err != nil {
 		//pianc
 		klog.Fatal(err)
