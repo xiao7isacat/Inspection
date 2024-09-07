@@ -14,11 +14,8 @@ var (
 	Database          string
 	SubmitJobYamlPath string
 	//ctl
-	Add    string
-	GetAll string
-	Getone string
-	Delete string
-	Update string
+	ResourceName     string
+	ResourceFilePath string
 	//agent
 	ScriptPath         string
 	ResultPath         string
