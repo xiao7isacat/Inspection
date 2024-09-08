@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func configRouters(r *gin.Engine) {
+func configServerRouters(r *gin.Engine) {
 
 	r.StaticFS("static-file", http.Dir("static-file"))
 	log.Println(os.Getwd())
@@ -35,6 +35,21 @@ func configRouters(r *gin.Engine) {
 
 	api.POST("/node-result-report", NodeResultReport)
 
+}
+
+func configAgentRouters(r *gin.Engine) {
+
+	r.StaticFS("static-file", http.Dir("static-file"))
+	log.Println(os.Getwd())
+
+	api := r.Group("/api/v1")
+	api.GET("healthy", func(c *gin.Context) {
+		c.String(200, "ok")
+	})
+	api.GET("now-ts", GetNowTs)
+
+	api.POST("/run-check-script", CheckScriptRun)
+	//api.GET("/check-script", CheckScriptGets)
 }
 
 func GetNowTs(c *gin.Context) {

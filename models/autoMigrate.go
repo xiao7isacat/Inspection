@@ -7,4 +7,6 @@ func AutoMigrat() {
 	database.DB.AutoMigrate(&CheckJob{})
 	database.DB.AutoMigrate(&FailedNodeResult{})
 	database.DB.AutoMigrate(&DesiredResult{})
+	//database.DB.AutoMigrate(&IpAddrInfo{})
+	//database.DB.AutoMigrate(&HostJobRelation{})
 }

@@ -11,7 +11,7 @@ type CheckJob struct {
 	ScriptName     string   `json:"script_name" gorm:"varchar(10);not null"`                     //脚本名称
 	ClusterName    string   `json:"cluster_name" gorm:"varchar(20)"`                             //集群名称
 	DesiredName    string   `json:"desired_name" gorm:"varchar(20);not null"`                    //基线名称
-	IpJson         string   `json:"ip_json" gorm:"text"`                                         //机器的列表
+	IpString       string   `json:"ip_string" gorm:"text"`                                       //机器的列表
 	JobHasSynced   int      `json:"job_has_synced" gorm:"job_has_synced"`                        //任务是否被同步
 	JobHasComplete int      `json:"job_has_complete" gorm:"job_has_complete"`                    //任务是否完成
 	IpList         []string `gorm:"-" json:"ip_list"`

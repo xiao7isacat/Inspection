@@ -94,19 +94,3 @@ func (this *CheckScript) Delete() error {
 	}
 	return nil
 }
-
-func (this *CheckScript) CheckExist() (bool, error) {
-	var (
-		checkScript CheckScript
-	)
-	table := database.DB.Table(this.TableName())
-	if this.Name != "" {
-		table = table.Where("name = ?", this.Name)
-	}
-
-	if err := table.Debug().First(&checkScript).Error; err != nil {
-		return false, err
-	}
-
-	return true, nil
-}

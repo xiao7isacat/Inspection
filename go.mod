@@ -7,6 +7,7 @@ require (
 	github.com/gammazero/workerpool v1.1.3
 	github.com/gin-gonic/gin v1.10.0
 	github.com/prometheus/common v0.55.0
+	github.com/spf13/cobra v1.8.1
 	github.com/zsais/go-gin-prometheus v0.1.0
 	golang.org/x/sync v0.7.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -56,7 +57,6 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
-	github.com/spf13/cobra v1.8.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/stretchr/testify v1.9.0 // indirect

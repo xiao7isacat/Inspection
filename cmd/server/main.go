@@ -8,7 +8,7 @@ import (
 	"inspection/models"
 	"inspection/pkg/check"
 	"inspection/pkg/config"
-	esl "inspection/pkg/signal"
+	"inspection/pkg/signal"
 	"inspection/pkg/web"
 	"k8s.io/klog/v2"
 )
@@ -35,10 +35,10 @@ func main() {
 
 	models.AutoMigrat()
 	//new manger
-	cm := check.NewCheckJobManger(sConfig)
+	cm := check.ServerCheckJobManger(sConfig)
 
 	//接受信号，开始编排
-	group, stopChan := esl.SetupStopSignalContext()
+	group, stopChan := signal.SetupStopSignalContext()
 	ctlAll, cancelAll := context.WithCancel(context.Background())
 
 	//接收退出信号的ctx
@@ -55,6 +55,7 @@ func main() {
 		}
 	})
 
+	//服务端启动
 	group.Go(func() error {
 		klog.Infof("[metrics web start backend]")
 		errChan := make(chan error)
@@ -74,11 +75,10 @@ func main() {
 
 	//开启作业下发的任务检查
 	group.Go(func() error {
-		klog.Infof("[cm.RunCronJobManager start backend]")
-		err := cm.Run(ctlAll)
+		klog.Infof("[cm.RunCheckJobManager start backend]")
+		err := cm.RunCheckJobManger(ctlAll)
 		if err != nil {
-			klog.Errorf("[cm.RunCronJobManager.error][err:%v]", err)
-
+			klog.Errorf("[cm.RunCheckJobManager.error][err:%v]", err)
 		}
 		return err
 	})

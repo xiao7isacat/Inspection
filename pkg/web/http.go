@@ -3,8 +3,8 @@ package web
 import (
 	"github.com/gin-gonic/gin"
 	ginprometheus "github.com/zsais/go-gin-prometheus"
+	"inspection/global"
 	"inspection/pkg/check"
-	"inspection/pkg/common"
 	"inspection/pkg/config"
 	"k8s.io/klog/v2"
 	"net/http"
@@ -21,11 +21,11 @@ func StartServer(cf *config.Config, cm *check.CheckJobManager) error {
 
 	// 外部指针变量传递给gin，在view中使用
 	m := make(map[string]interface{})
-	m[common.CheckJobManager] = cm
+	m[global.CheckJobManager] = cm
 	r.Use(ConfigMiddleware(m))
 
 	//路由
-	configRouters(r)
+	configServerRouters(r)
 	s := &http.Server{
 		Addr:              cf.HttpAddr,
 		Handler:           r,
@@ -39,5 +39,26 @@ func StartServer(cf *config.Config, cm *check.CheckJobManager) error {
 		return err
 	}
 	return nil
+}
 
+func StartAgent() error {
+	r := gin.New()
+	gin.SetMode(gin.ReleaseMode)
+	gin.DisableConsoleColor()
+
+	//路由
+	configAgentRouters(r)
+	s := &http.Server{
+		Addr:              ":" + global.AgentPort,
+		Handler:           r,
+		ReadHeaderTimeout: time.Second * 15,
+		WriteTimeout:      time.Second * 15,
+		MaxHeaderBytes:    1 << 2,
+	}
+
+	klog.Infof("[web.server.available.at:%v]", global.AgentPort)
+	if err := s.ListenAndServe(); err != nil {
+		return err
+	}
+	return nil
 }
