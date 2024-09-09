@@ -21,6 +21,7 @@ type CheckJob struct {
 	AllNum     int64 `json:"all_num" gorm:"all_num"`         //任务数量
 	SuccessNum int64 `json:"success_num" gorm:"success_num"` //成功数量
 	FailedNum  int64 `json:"failed_num" gorm:"failed_num"`   //失败数量
+	MissNum    int64 `json:"miss_num" gorm:"miss_num"`       //失联数量
 }
 
 func (this *CheckJob) TableName() string {
@@ -61,13 +62,27 @@ func (this *CheckJob) CreateOne() (uint, error) {
 
 func (this *CheckJob) Update() error {
 	table := database.DB.Table(this.TableName())
-	var checkJob CheckJob
 	if this.Name != "" {
-		checkJob.Name = this.Name
 		table = table.Where("name = ?", this.Name)
 	}
+	if this.ID != 0 {
+		table = table.Where("id = ?", this.ID)
+	}
+	if err := table.Debug().Updates(this).Error; err != nil {
+		return err
+	}
+	return nil
+}
 
-	if err := table.Updates(this).Error; err != nil {
+func (this *CheckJob) UpdateNodeStatus() error {
+	table := database.DB.Table(this.TableName())
+	if this.Name != "" {
+		table = table.Where("name = ?", this.Name)
+	}
+	if this.ID != 0 {
+		table = table.Where("id = ?", this.ID)
+	}
+	if err := table.Select("job_has_complete", "success_num", "failed_num", "miss_num").Debug().Updates(this).Error; err != nil {
 		return err
 	}
 	return nil

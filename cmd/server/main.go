@@ -39,7 +39,7 @@ func main() {
 
 	//接受信号，开始编排
 	group, stopChan := signal.SetupStopSignalContext()
-	ctlAll, cancelAll := context.WithCancel(context.Background())
+	ctxAll, cancelAll := context.WithCancel(context.Background())
 
 	//接收退出信号的ctx
 	group.Go(func() error {
@@ -67,7 +67,7 @@ func main() {
 		case err := <-errChan:
 			klog.Errorf("[web.server.error][err:%v]", err)
 			return err
-		case <-ctlAll.Done():
+		case <-ctxAll.Done():
 			klog.Info("receive.quit.singal.web.server.exit")
 			return nil
 		}
@@ -76,9 +76,20 @@ func main() {
 	//开启作业下发的任务检查
 	group.Go(func() error {
 		klog.Infof("[cm.RunCheckJobManager start backend]")
-		err := cm.RunCheckJobManger(ctlAll)
+		err := cm.RunCheckJobManger(ctxAll)
 		if err != nil {
 			klog.Errorf("[cm.RunCheckJobManager.error][err:%v]", err)
+		}
+		return err
+	})
+
+	// 统计作业的成功失败数量
+	group.Go(func() error {
+		klog.Infof("[cm.RunComputeJobManager start backend]")
+		err := cm.RunComputeJobManager(ctxAll)
+		if err != nil {
+			klog.Errorf("[cm.RunComputeJobManager.error][err:%v]", err)
+
 		}
 		return err
 	})

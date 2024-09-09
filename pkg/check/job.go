@@ -153,7 +153,7 @@ func (this *CheckJobManager) Download() error {
 		// 如果返回错误，则目录不存在
 		if os.IsNotExist(err) {
 			// 创建目录
-			err = os.Mkdir(workPath, 0755) // 设置目录权限
+			err = os.MkdirAll(workPath, 0755) // 设置目录权限
 			if err != nil {
 				log.Printf("Error creating directory: %v\n", err)
 				return fmt.Errorf("Error creating directory: %v\n", err)
@@ -227,7 +227,9 @@ func (this *CheckJobManager) ComputeCheckJob(ctx context.Context) {
 	for i := 0; i < len(jobs); i++ {
 		job := jobs[i]
 		// 因为机器比较多，还没上报完，这时候统计的成功失败数量是 不准的
+		date := time.Now().Sub(job.UpdatedAt).Minutes()
 		if time.Now().Sub(job.UpdatedAt).Minutes() < float64(job.JobWaitCompleteMinutes) {
+			klog.Info(date, float64(job.JobWaitCompleteMinutes))
 			klog.Infof("models.CheckJobGetUnCompute.still.in.wait:%v", job.Name)
 			continue
 		}
@@ -241,7 +243,36 @@ func (this *CheckJobManager) ComputeCheckJob(ctx context.Context) {
 }
 
 func (this *CheckJobManager) ComputeOneJob(cj *models.CheckJob) {
+	var successNodeResult models.FailedNodeResult
+	successNodeResult.JobId = int64(cj.ID)
+	successNodeResult.FinalSucceed = 1
+	thisJobSuccessNodes, err := successNodeResult.GetList()
+	if err != nil {
+		klog.Errorf("ComputeOneJob.models.SuccessNodeResultByJobId.err[err:%v][jobName:%v]", err, cj.Name)
+		return
+	}
 
+	var failedNodeResult models.FailedNodeResult
+	failedNodeResult.JobId = int64(cj.ID)
+	failedNodeResult.FinalSucceed = 2
+	thisJobFailedNodes, err := failedNodeResult.GetList()
+	if err != nil {
+		klog.Errorf("ComputeOneJob.models.FailedNodeResultByJobId.err[err:%v][jobName:%v]", err, cj.Name)
+		return
+	}
+
+	cj.SuccessNum = int64(len(thisJobSuccessNodes))
+	cj.FailedNum = int64(len(thisJobFailedNodes))
+	klog.Info("failed num ", cj.FailedNum)
+	cj.FailedNum = int64(0)
+	cj.MissNum = cj.AllNum - cj.SuccessNum - cj.FailedNum
+	cj.JobHasComplete = 1
+	if err = cj.UpdateNodeStatus(); err != nil {
+		klog.Errorf("ComputeOneJob.models.cj.Update.err[err:%v][jobName:%v]", err, cj.Name)
+		return
+	}
+	klog.Infof("ComputeOneJob.models.cj.Update[updated:%v][jobName:%v]", cj.Name)
+	// 标记为结束
 }
 
 // 下发任务第一版

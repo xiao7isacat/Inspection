@@ -51,6 +51,7 @@ func ExecJobs(cj *check.CheckJobManager) error {
 	}
 
 	desiredFileName := cj.AgentParameters.JobDir + "/" + cj.AgentParameters.ResultName + ".result"
+	scriptFileName := cj.AgentParameters.JobDir + "/" + cj.AgentParameters.ResultName + ".sh"
 
 	resultBytes, err := ioutil.ReadFile(desiredFileName)
 	if err != nil {
@@ -59,20 +60,79 @@ func ExecJobs(cj *check.CheckJobManager) error {
 	}
 	klog.Infof("desired is %v", string(resultBytes))
 
-	/*	desiredResultMap := map[string]string{}
-		actualResultMap := map[string]string{}
-		err = json.Unmarshal(resultBytes, &desiredResultMap)
-		if err != nil {
-			klog.Errorf("ComputeOneJob.desiredResult.ResultJson.json.Unmarshal.err:%v", err)
-			return fmt.Errorf("Unmarshal resultBytes to desiredResultMap failed %v", err)
+	desiredResultMap := map[string]string{}
+	actualResultMap := map[string]string{}
+	if err = json.Unmarshal(resultBytes, &desiredResultMap); err != nil {
+		klog.Errorf("ComputeOneJob.desiredResult.ResultJson.json.Unmarshal.err:%v", err)
+		return fmt.Errorf("Unmarshal resultBytes to desiredResultMap failed %v", err)
+	}
+	klog.Infof("[desiredResultMap.print][%v]", desiredResultMap)
+	out, err := CommandWithTw("/bin/bash", scriptFileName)
+	if err != nil {
+		oneResult.ErrMsg = err.Error()
+	}
+	err = json.Unmarshal([]byte(out), &actualResultMap)
+	klog.Infof("[actualResultMap.print][%v]", actualResultMap)
+	same := true
+	if len(desiredResultMap) != len(actualResultMap) {
+		same = false
+	}
+	for dk, dv := range desiredResultMap {
+		if dv != actualResultMap[dk] {
+			same = false
 		}
-		klog.Infof("[desiredResultMap.print][%v]", desiredResultMap)
-		out, err := CommandWithTw("/bin/bash", global.ScriptPath)*/
+	}
+	oneResult.Succeed = same
+	oneResult.ResultJson = out
+	actualResultPath := fmt.Sprintf("%s_%s", desiredFileName, "actual")
+	err = ioutil.WriteFile(actualResultPath, []byte(out), 0644)
+	klog.Infof("[run.result.print][same:%v][WriteFile.err:%v]", same, err)
+
+	reportUrl := cj.Cg.CheckServerAddr + "/api/v1/node-result-report"
+	for i := 0; i < 10; i++ {
+		hc := pconfig.HTTPClientConfig{}
+		_, err := utils.PostWithBearerToken("report-result", hc, 10, reportUrl, oneResult)
+		if err == nil {
+			klog.Info("report-result.success")
+			break
+		}
+		klog.Errorf("report-result.err[addr:%v][err:%v]", reportUrl, err)
+		time.Sleep(3 * time.Second)
+	}
 	return nil
 
 }
 
-func ExecOneJob(checkJobManger *check.CheckJobManager) {
+func GetLocalIp() string {
+	conn, err := net.Dial("udp", "8.8.8.8:53")
+	if err != nil {
+		log.Printf("get local addr err:%v", err)
+		return ""
+	} else {
+		localIp := strings.Split(conn.LocalAddr().String(), ":")[0]
+		conn.Close()
+		return localIp
+	}
+}
+
+func CommandWithTw(name string, arg ...string) (string, error) {
+	ctxt, cancel := context.WithTimeout(context.Background(), time.Duration(global.ExecTimeoutSeconds)*time.Second)
+	defer cancel() //releases resources if slowOperation completes before timeout elapses
+	cmd := exec.CommandContext(ctxt, name, arg...)
+	//当经过Timeout时间后，程序依然没有运行完，则会杀掉进程，ctxt也会有err信息
+	if out, err := cmd.Output(); err != nil {
+		//检测报错是否是因为超时引起的
+		if ctxt.Err() != nil && ctxt.Err() == context.DeadlineExceeded {
+			return "", errors.New("command timeout")
+
+		}
+		return string(out), err
+	} else {
+		return string(out), nil
+	}
+}
+
+/*func ExecOneJob(checkJobManger *check.CheckJobManager) {
 	nodeIp := GetLocalIp()
 	oneResult := models.FailedNodeResult{
 		NodeIp: nodeIp,
@@ -135,9 +195,9 @@ func ExecOneJob(checkJobManger *check.CheckJobManager) {
 		klog.Errorf("report-result.err[addr:%v][err:%v]", global.ServerAddr, err)
 		time.Sleep(5 * time.Second)
 	}
-}
+}*/
 
-func ExecTest(checkJobManger *check.CheckJobManager) {
+/*func ExecTest(checkJobManger *check.CheckJobManager) {
 	if checkJobManger == nil {
 		log.Println("checkJobManger is nil")
 		return
@@ -148,39 +208,6 @@ func ExecTest(checkJobManger *check.CheckJobManager) {
 		log.Println(checkJobManger.Cg.CheckServerAddr)
 	}
 	log.Println(checkJobManger.AgentParameters.JobDir)
-	/*log.Println(checkJobManger.AgentParameters.ScriptName)
-	log.Println(checkJobManger.AgentParameters.ResultFileName)*/
-}
-
-func GetLocalIp() string {
-	conn, err := net.Dial("udp", "8.8.8.8:53")
-	if err != nil {
-		log.Printf("get local addr err:%v", err)
-		return ""
-	} else {
-		localIp := strings.Split(conn.LocalAddr().String(), ":")[0]
-		conn.Close()
-		return localIp
-	}
-}
-
-func CommandWithTw(name string, arg ...string) (string, error) {
-	ctxt, cancel := context.WithTimeout(context.Background(), time.Duration(global.ExecTimeoutSeconds)*time.Second)
-	defer cancel() //releases resources if slowOperation completes before timeout elapses
-	cmd := exec.CommandContext(ctxt, name, arg...)
-	//当经过Timeout时间后，程序依然没有运行完，则会杀掉进程，ctxt也会有err信息
-	if out, err := cmd.Output(); err != nil {
-		//检测报错是否是因为超时引起的
-		if ctxt.Err() != nil && ctxt.Err() == context.DeadlineExceeded {
-			return "", errors.New("command timeout")
-
-		}
-		return string(out), err
-	} else {
-		return string(out), nil
-	}
-}
-
-func Dow() {
-
-}
+	log.Println(checkJobManger.AgentParameters.ScriptName)
+	log.Println(checkJobManger.AgentParameters.ResultFileName)
+}*/

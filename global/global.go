@@ -21,11 +21,11 @@ var (
 	//ctl
 	ResourceName     string
 	ResourceFilePath string
+	NodeAddrs        string
 	//agent
 	AgentPort          string
 	ScriptPath         string
 	ResultPath         string
 	JobId              int64
 	ExecTimeoutSeconds int
-	NodeAddrs          string
 )
