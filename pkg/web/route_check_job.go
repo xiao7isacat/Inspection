@@ -207,8 +207,7 @@ func CtlStatusJobs(c *gin.Context) {
 
 	for _, job := range checkJobs {
 		var (
-			failedNodeResult models.FailedNodeResult
-			desiredResult    models.DesiredResult
+			desiredResult models.DesiredResult
 		)
 		//获取任务和基线
 		jobStatus.JobName = job.Name
@@ -247,39 +246,36 @@ func CtlStatusJobs(c *gin.Context) {
 			}
 
 			//job完成时获取结果
-			failedNodeResult.JobId = int64(job.ID)
-			JobNodeResults, err := failedNodeResult.GetList()
-			if err != nil {
-				klog.Info("获取任务", desiredResult.Name, "执行结果失败", err)
-			}
-			//未获取到执行结果时，任务节点丢失
-			if len(JobNodeResults) == 0 {
-				jobStatus.Status = "Miss"
-				jobStatus.ActualValue = ""
-				for _, ipList := range strings.Split(job.IpString, ",") {
-					jobStatus.Node = ipList
-					jobStatusList = append(jobStatusList, jobStatus)
+			for _, nodeIp := range strings.Split(job.IpString, ",") {
+				var failedNodeResult models.FailedNodeResult
+				failedNodeResult.JobId = int64(job.ID)
+				failedNodeResult.NodeIp = nodeIp
+				if err := failedNodeResult.GetOne(); err != nil {
+					//未获取到执行结果时，任务节点丢失
+					if err == gorm.ErrRecordNotFound {
+						jobStatus.Status = "Miss"
+						jobStatus.ActualValue = ""
+						jobStatus.Node = nodeIp
+						jobStatusList = append(jobStatusList, jobStatus)
+						continue
+					}
+					klog.Info("获取节点", nodeIp, "任务", desiredResult.Name, "执行结果失败", err)
 				}
-				continue
-			}
-
-			//获取到执行结果时
-			for _, JobNodeResult := range JobNodeResults {
-				if JobNodeResult.FinalSucceed == 1 {
+				//获取到结果对比
+				if failedNodeResult.FinalSucceed == 1 {
 					jobStatus.Status = "Success"
 				} else {
 					jobStatus.Status = "Failed"
 				}
-				if err = json.Unmarshal([]byte(JobNodeResult.ResultJson), &actualResultMap); err != nil {
+				if err = json.Unmarshal([]byte(failedNodeResult.ResultJson), &actualResultMap); err != nil {
 					klog.Info("failedNodeResult.ResultJson.json.Unmarshal.err:%v", err)
 				}
 				jobStatus.ActualValue = actualResultMap[dk]
-				jobStatus.Node = JobNodeResult.NodeIp
+				jobStatus.Node = failedNodeResult.NodeIp
 				jobStatusList = append(jobStatusList, jobStatus)
+
 			}
-
 		}
-
 	}
 
 	response.JSONR(c, 200, jobStatusList)

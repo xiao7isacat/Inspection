@@ -7,9 +7,9 @@ import (
 
 type FailedNodeResult struct {
 	gorm.Model
-	JobId        int64  `json:"job_id" gorm:"varchar(10);not null;index:idx_failed_node_result,unique"`  //任务名称
-	NodeIp       string `json:"node_ip" gorm:"varchar(20);not null;index:idx_failed_node_result,unique"` //节点名称
-	ResultJson   string `json:"result_json" gorm:"text;not null"`                                        //执行脚本的结果
+	JobId        int64  `json:"job_id" gorm:"varchar(10);not null"`  //任务名称
+	NodeIp       string `json:"node_ip" gorm:"varchar(20);not null"` //节点名称
+	ResultJson   string `json:"result_json" gorm:"text;not null"`    //执行脚本的结果
 	Succeed      bool   `json:"succeed" gorm:"-"`
 	FinalSucceed int    `json:"final_succeed" gorm:"final_succeed"`
 	ErrMsg       string `json:"err_msg" gorm:"text"` //报错信息
@@ -42,6 +42,16 @@ func (this *FailedNodeResult) CreateOrUpdate() (uint, error) {
 	return this.ID, nil
 }
 
+func (this *FailedNodeResult) CreateOne() (uint, error) {
+	table := database.DB.Table(this.TableName())
+
+	if err := table.Debug().Create(this).Error; err != nil {
+		return this.ID, err
+	}
+
+	return this.ID, nil
+}
+
 func (this *FailedNodeResult) Update() error {
 	table := database.DB.Table(this.TableName())
 	if this.JobId != 0 {
@@ -57,6 +67,9 @@ func (this *FailedNodeResult) GetOne() error {
 	table := database.DB.Table(this.TableName())
 	if this.JobId != 0 {
 		table = table.Where("job_id = ?", this.JobId)
+	}
+	if this.NodeIp != "" {
+		table = table.Where("node_ip = ?", this.NodeIp)
 	}
 	if err := table.Debug().First(this).Error; err != nil {
 		return err

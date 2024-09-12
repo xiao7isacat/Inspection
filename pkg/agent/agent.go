@@ -13,15 +13,11 @@ import (
 	"io/ioutil"
 	"k8s.io/klog/v2"
 	"log"
-	"net"
 	"os/exec"
-	"strings"
 	"time"
 )
 
 func ExecJobs(cj *check.CheckJobManager) error {
-
-	nodeIp := GetLocalIp()
 
 	if cj == nil {
 		log.Println("checkJobManger is nil")
@@ -46,7 +42,7 @@ func ExecJobs(cj *check.CheckJobManager) error {
 	}
 
 	oneResult := models.FailedNodeResult{
-		NodeIp: nodeIp,
+		NodeIp: cj.AgentParameters.NodeIP,
 		JobId:  cj.AgentParameters.JobId,
 	}
 
@@ -84,6 +80,7 @@ func ExecJobs(cj *check.CheckJobManager) error {
 	}
 	oneResult.Succeed = same
 	oneResult.ResultJson = out
+	klog.V(2).Info(oneResult)
 	actualResultPath := fmt.Sprintf("%s_%s", desiredFileName, "actual")
 	err = ioutil.WriteFile(actualResultPath, []byte(out), 0644)
 	klog.Infof("[run.result.print][same:%v][WriteFile.err:%v]", same, err)
@@ -100,19 +97,6 @@ func ExecJobs(cj *check.CheckJobManager) error {
 		time.Sleep(3 * time.Second)
 	}
 	return nil
-
-}
-
-func GetLocalIp() string {
-	conn, err := net.Dial("udp", "8.8.8.8:53")
-	if err != nil {
-		log.Printf("get local addr err:%v", err)
-		return ""
-	} else {
-		localIp := strings.Split(conn.LocalAddr().String(), ":")[0]
-		conn.Close()
-		return localIp
-	}
 }
 
 func CommandWithTw(name string, arg ...string) (string, error) {
@@ -131,83 +115,3 @@ func CommandWithTw(name string, arg ...string) (string, error) {
 		return string(out), nil
 	}
 }
-
-/*func ExecOneJob(checkJobManger *check.CheckJobManager) {
-	nodeIp := GetLocalIp()
-	oneResult := models.FailedNodeResult{
-		NodeIp: nodeIp,
-		JobId:  global.JobId,
-	}
-	// 读取一下result json结果
-	resultBytes, err := ioutil.ReadFile(global.ResultPath)
-	if err != nil {
-		klog.Errorf("ioutil.ReadFile(resultPath).err[file:%v][path:%v]", global.ResultPath, err)
-		oneResult.ErrMsg = err.Error()
-	}
-
-	desiredResultMap := map[string]string{}
-	actualResultMap := map[string]string{}
-	err = json.Unmarshal(resultBytes, &desiredResultMap)
-	if err != nil {
-		klog.Errorf("ComputeOneJob.desiredResult.ResultJson.json.Unmarshal.err:%v", err)
-		return
-	}
-	klog.Infof("[desiredResultMap.print][%v]", desiredResultMap)
-	out, err := CommandWithTw("/bin/bash", global.ScriptPath)
-
-	if err != nil {
-		oneResult.ErrMsg = err.Error()
-	}
-	err = json.Unmarshal([]byte(out), &actualResultMap)
-
-	if err != nil {
-		klog.Errorf("ComputeOneJob.actualResultMap.json.Unmarshal.[err:%v][jsonStr:%v]", err, out)
-		return
-	}
-
-	klog.Infof("[actualResultMap.print][%v]", actualResultMap)
-	// 对比两边的结果
-	same := true
-	if len(desiredResultMap) != len(actualResultMap) {
-		same = false
-	}
-	for dk, dv := range desiredResultMap {
-		if dv != actualResultMap[dk] {
-			same = false
-		}
-	}
-
-	oneResult.Succeed = same
-	oneResult.ResultJson = out
-	// 写入本地结果
-	actualResultPath := fmt.Sprintf("%s_%s", global.ResultPath, "actual")
-	err = ioutil.WriteFile(actualResultPath, []byte(out), 0644)
-	klog.Infof("[run.result.print][same:%v][WriteFile.err:%v]", same, err)
-	// 最多尝试10次
-
-	for i := 0; i < 10; i++ {
-		hc := pconfig.HTTPClientConfig{}
-		_, err := utils.PostWithBearerToken("report-result", hc, 10, global.ServerAddr, oneResult)
-		if err == nil {
-			klog.Info("report-result.success")
-			break
-		}
-		klog.Errorf("report-result.err[addr:%v][err:%v]", global.ServerAddr, err)
-		time.Sleep(5 * time.Second)
-	}
-}*/
-
-/*func ExecTest(checkJobManger *check.CheckJobManager) {
-	if checkJobManger == nil {
-		log.Println("checkJobManger is nil")
-		return
-	}
-	if checkJobManger.Cg == nil {
-		log.Println("checkJobManger.Cg is nil")
-	} else {
-		log.Println(checkJobManger.Cg.CheckServerAddr)
-	}
-	log.Println(checkJobManger.AgentParameters.JobDir)
-	log.Println(checkJobManger.AgentParameters.ScriptName)
-	log.Println(checkJobManger.AgentParameters.ResultFileName)
-}*/

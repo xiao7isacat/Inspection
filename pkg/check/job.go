@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -24,6 +25,7 @@ type CheckJobManager struct {
 	Cg              *config.CheckJobConf
 	Version         string
 	AgentParameters *AgentArgs
+	rw              sync.RWMutex
 }
 
 // agent执行参数
@@ -32,6 +34,7 @@ type AgentArgs struct {
 	ScriptName string `json:"script_name"`
 	ResultName string `json:"result_file_name"`
 	JobId      int64  `json:"job_id"`
+	NodeIP     string `json:"node_ip"`
 }
 
 // server初始化
@@ -100,15 +103,18 @@ func (this *CheckJobManager) SubmitJob(job *models.CheckJob) {
 
 	job.IpList = strings.Split(job.IpString, ",")
 	klog.V(2).Infof("SubmitJob.job.Post.print[job:%v][date: %v]", job.Name, checkJobManger.AgentParameters.JobDir)
-	jsonData, err := json.Marshal(checkJobManger)
-	if err != nil {
-		klog.Infof("SubmitJob.job.print[job:%v][Marshal: false][err:%v]", job.Name, err)
-	}
 
 	wp := workerpool.New(len(job.IpList))
 	for _, host := range job.IpList {
 		wp.Submit(func() {
 			url := "http://" + host + "/api/v1/run-check-script"
+			checkJobManger.rw.Lock()
+			checkJobManger.AgentParameters.NodeIP = host
+			jsonData, err := json.Marshal(checkJobManger)
+			checkJobManger.rw.Unlock()
+			if err != nil {
+				klog.Infof("SubmitJob.job.print[job:%v][Marshal: false][err:%v]", job.Name, err)
+			}
 			if err = utils.Post(url, jsonData); err != nil {
 				klog.Infof("SubmitJob.job.Post.print[job:%v][err:%v]", job.Name, err)
 			}

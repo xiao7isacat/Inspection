@@ -12,7 +12,8 @@ import (
 var ()
 
 func main() {
-	version := flag.Bool("v", false, "prints current roxy version")
+	klog.InitFlags(flag.CommandLine)
+	version := flag.Bool("version", false, "prints current roxy version")
 	flag.IntVar(&global.ExecTimeoutSeconds, "exec_timeout_seconds", 10, "exec tw sec")
 	flag.StringVar(&global.AgentPort, "agentport", "8093", "agent port")
 	flag.Parse()

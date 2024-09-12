@@ -81,7 +81,7 @@ func (this *JobStatus) Get() error {
 				os.Exit(0)
 			default:
 				// 等待一段时间再次发送请求
-				time.Sleep(5 * time.Second)
+				time.Sleep(1 * time.Second)
 			}
 
 		}

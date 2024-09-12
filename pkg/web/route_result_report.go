@@ -26,7 +26,7 @@ func NodeResultReport(c *gin.Context) {
 		klog.Infof("[NodeResultReport.node.failed][ip:%v][job_id:%v]", input.NodeIp, input.JobId)
 	}
 
-	id, err := input.CreateOrUpdate()
+	id, err := input.CreateOne()
 	if err != nil {
 		response.JSONR(c, 500, err)
 		return
