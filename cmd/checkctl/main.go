@@ -21,6 +21,7 @@ func init() {
 	RootCommand.AddCommand(checkctl.GetCmd)
 	RootCommand.AddCommand(checkctl.UpdateCmd)
 	RootCommand.AddCommand(checkctl.DeleteCmd)
+	RootCommand.AddCommand(checkctl.RunCmd)
 
 	RootCommand.Flags().StringVar(&global.ServerAddr, "server_addr", "127.0.0.1:8092", "server_addr")
 	RootCommand.PersistentFlags().StringVarP(&global.ResourceFilePath, "file", "f", "test", "指定传入的文件")

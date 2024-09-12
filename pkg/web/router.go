@@ -32,6 +32,11 @@ func configServerRouters(r *gin.Engine) {
 	api.POST("/check-job", CheckJobAdd)
 	//api.POST("/cron-job", CronJobAdd)
 	api.GET("/check-job", CheckJobGets)
+	// job status
+	api.GET("ctl-status-job", CtlStatusJobs)
+	api.GET("web-status-job", WebStatusJobs)
+	// job run
+	api.POST("run-jobs", RunJobs)
 
 	api.POST("/node-result-report", NodeResultReport)
 

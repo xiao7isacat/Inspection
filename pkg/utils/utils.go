@@ -96,9 +96,8 @@ func Get(url string) ([]byte, error) {
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("请求响应报错:%v,报错内容为:%v", resp.StatusCode, string(body))
 	}
-	klog.Infof("Get %s", url, string(body))
+	klog.V(1).Infof("Get %s", url)
 	klog.V(2).Infof("Get %s ,Body: %s\n", url, string(body))
-	fmt.Printf("Get %s ,Body: %s\n", url, string(body))
 	return body, nil
 }
 

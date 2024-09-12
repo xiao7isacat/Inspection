@@ -20,6 +20,9 @@ func NewResource(resourceType string) Resource {
 		return &Desired{Name: global.ResourceName, ResourceFilePath: global.ResourceFilePath}
 	case "script":
 		return &Script{Name: global.ResourceName, ResourceFilePath: global.ResourceFilePath}
+	case "status":
+		return &JobStatus{}
+
 	}
 	return nil
 }

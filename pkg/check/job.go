@@ -209,6 +209,7 @@ func (this *CheckJobManager) RunComputeJobManager(ctx context.Context) error {
 	return nil
 }
 
+// 统计任务
 func (this *CheckJobManager) ComputeCheckJob(ctx context.Context) {
 	// 获取还需要统计
 	var checkJob models.CheckJob

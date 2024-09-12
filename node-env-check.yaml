@@ -8,5 +8,5 @@ check_job_info:
   node_run_check_dir: "/opt/node-env-check" #agent的执行目录
   agent_bin_download_addr: "http://10.211.55.2:8092/static-file/node-env-check-agent_v1.0" #agent的下载地址
   check_submit_job_interval_seconds: 3 #下发任务的周期参数 秒
-  complete_job_interval_seconds: 6 #统计任务完成的周期参数 秒
-  metrics_job_interval_seconds: 30
+  complete_job_interval_seconds: 10 #统计任务完成的周期参数 秒
+  metrics_job_interval_seconds: 5

@@ -88,6 +88,20 @@ func (this *CheckJob) UpdateNodeStatus() error {
 	return nil
 }
 
+func (this *CheckJob) UpdateStatus() error {
+	table := database.DB.Table(this.TableName())
+	if this.Name != "" {
+		table = table.Where("name = ?", this.Name)
+	}
+	if this.ID != 0 {
+		table = table.Where("id = ?", this.ID)
+	}
+	if err := table.Select("job_has_synced", "job_has_complete").Debug().Updates(this).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (this *CheckJob) GetOne() (uint, error) {
 
 	table := database.DB.Table(this.TableName())
@@ -112,6 +126,17 @@ func (this *CheckJob) GetNotSyncList() ([]*CheckJob, error) {
 	var checkJobList []*CheckJob
 	table := database.DB.Table(this.TableName())
 	table.Where("job_has_synced = 0")
+
+	if err := table.Debug().Find(&checkJobList).Error; err != nil {
+		return checkJobList, err
+	}
+	return checkJobList, nil
+}
+
+func (this *CheckJob) GetSyncList() ([]*CheckJob, error) {
+	var checkJobList []*CheckJob
+	table := database.DB.Table(this.TableName())
+	table.Where("job_has_synced = 1")
 
 	if err := table.Debug().Find(&checkJobList).Error; err != nil {
 		return checkJobList, err

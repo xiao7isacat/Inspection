@@ -11,6 +11,7 @@ var resourceMap = map[string]bool{
 	"job":     true,
 	"script":  true,
 	"desired": true,
+	"status":  true,
 }
 
 var AddCmd = &cobra.Command{
@@ -82,5 +83,12 @@ var DeleteCmd = &cobra.Command{
 			klog.Error(err)
 			os.Exit(1)
 		}*/
+	},
+}
+
+var RunCmd = &cobra.Command{
+	Use: "run",
+	Run: func(cmd *cobra.Command, args []string) {
+		Run()
 	},
 }
