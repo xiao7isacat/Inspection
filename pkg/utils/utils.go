@@ -11,8 +11,11 @@ import (
 	"io/ioutil"
 	"k8s.io/klog/v2"
 	"net/http"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
+	"unicode"
 )
 
 func Post(url string, body []byte) error {
@@ -400,4 +403,66 @@ func SendImageToIm(seatalkBotUrl string, imagePath string) {
 		err,
 	)
 
+}
+
+func Duibi(dv, av string) bool {
+	same := true
+	if len(dv) >= 2 {
+		switch dv[0:2] {
+		case ">=":
+			re := regexp.MustCompile(`^\d+`)
+			desiredwithEndStr := strings.TrimLeftFunc(strings.TrimPrefix(dv, ">="), unicode.IsSpace)
+			desiredStr := re.FindString(desiredwithEndStr)
+			aclStr := re.FindString(av)
+			desiredInt, _ := strconv.Atoi(desiredStr)
+			aclInt, _ := strconv.Atoi(aclStr)
+			if aclInt < desiredInt {
+				same = false
+				return same
+			}
+		case "<=":
+			re := regexp.MustCompile(`^\d+`)
+			desiredwithEndStr := strings.TrimLeftFunc(strings.TrimPrefix(dv, "<="), unicode.IsSpace)
+			desiredStr := re.FindString(desiredwithEndStr)
+			aclStr := re.FindString(av)
+			desiredInt, _ := strconv.Atoi(desiredStr)
+			aclInt, _ := strconv.Atoi(aclStr)
+			if aclInt > desiredInt {
+				same = false
+				return same
+			}
+		case ">":
+			re := regexp.MustCompile(`^\d+`)
+			desiredwithEndStr := strings.TrimLeftFunc(strings.TrimPrefix(dv, ">"), unicode.IsSpace)
+			desiredStr := re.FindString(desiredwithEndStr)
+			aclStr := re.FindString(av)
+			desiredInt, _ := strconv.Atoi(desiredStr)
+			aclInt, _ := strconv.Atoi(aclStr)
+			if aclInt <= desiredInt {
+				same = false
+				return same
+			}
+		case "<":
+			re := regexp.MustCompile(`^\d+`)
+			desiredwithEndStr := strings.TrimLeftFunc(strings.TrimPrefix(dv, "<"), unicode.IsSpace)
+			desiredStr := re.FindString(desiredwithEndStr)
+			aclStr := re.FindString(av)
+			desiredInt, _ := strconv.Atoi(desiredStr)
+			aclInt, _ := strconv.Atoi(aclStr)
+			if aclInt >= desiredInt {
+				same = false
+				return same
+			}
+		default:
+			if dv != av {
+				same = false
+				return same
+			}
+		}
+	} else {
+		if dv != av {
+			same = false
+		}
+	}
+	return same
 }

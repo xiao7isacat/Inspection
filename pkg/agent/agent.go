@@ -72,12 +72,15 @@ func ExecJobs(cj *check.CheckJobManager) error {
 	same := true
 	if len(desiredResultMap) != len(actualResultMap) {
 		same = false
-	}
-	for dk, dv := range desiredResultMap {
-		if dv != actualResultMap[dk] {
-			same = false
+	} else {
+		for dk, dv := range desiredResultMap {
+			if !utils.Duibi(dv, actualResultMap[dk]) {
+				break
+			}
+
 		}
 	}
+
 	oneResult.Succeed = same
 	oneResult.ResultJson = out
 	klog.V(2).Info(oneResult)

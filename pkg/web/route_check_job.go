@@ -9,6 +9,7 @@ import (
 	"inspection/models"
 	"inspection/pkg/check"
 	"inspection/pkg/response"
+	"inspection/pkg/utils"
 	"k8s.io/klog/v2"
 	"strings"
 )
@@ -261,15 +262,17 @@ func CtlStatusJobs(c *gin.Context) {
 					}
 					klog.Info("获取节点", nodeIp, "任务", desiredResult.Name, "执行结果失败", err)
 				}
-				//获取到结果对比
-				if failedNodeResult.FinalSucceed == 1 {
-					jobStatus.Status = "Success"
-				} else {
-					jobStatus.Status = "Failed"
-				}
 				if err = json.Unmarshal([]byte(failedNodeResult.ResultJson), &actualResultMap); err != nil {
 					klog.Info("failedNodeResult.ResultJson.json.Unmarshal.err:%v", err)
 				}
+				//获取到结果对比
+				if utils.Duibi(dv, actualResultMap[dk]) {
+					jobStatus.Status = "Success"
+				} else {
+					jobStatus.Status = "Failed"
+
+				}
+
 				jobStatus.ActualValue = actualResultMap[dk]
 				jobStatus.Node = failedNodeResult.NodeIp
 				jobStatusList = append(jobStatusList, jobStatus)

@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"k8s.io/klog/v2"
 	"os"
+	"os/exec"
 	"os/signal"
 	"syscall"
 	"time"
@@ -27,6 +28,7 @@ type JobStatus struct {
 func (this *JobStatus) Get() error {
 	exitSignal := make(chan os.Signal, 1)
 	signal.Notify(exitSignal, os.Interrupt, syscall.SIGTERM)
+	fmt.Print("\033[2J\033[H")
 	go func() {
 		for {
 
@@ -45,13 +47,17 @@ func (this *JobStatus) Get() error {
 			}
 
 			// clearScreen 使用终端控制序列清除屏幕
-			fmt.Print("\033[2J\033[H")
+
+			//fmt.Print("\033[2J\033[H")
+			cmd := exec.Command("tput", "reset")
+			cmd.Stdout = os.Stdout
+			cmd.Run()
 
 			if err = json.Unmarshal(jobResourceDate, &jobInfos); err != nil {
 				fmt.Printf("结果转换格式失败：%v", err)
 				os.Exit(1)
 			}
-			originalHeader := []string{"任务名称", "检测名称", "期望值", "状态", "节点", "真实值"}
+			originalHeader := []string{"任务名称", "检测名称", "节点", "状态", "期望值", "真实值"}
 			table := tablewriter.NewWriter(os.Stdout)
 			table.SetHeader(originalHeader)
 			// 不显示表格线
@@ -61,7 +67,7 @@ func (this *JobStatus) Get() error {
 			// 不显示竖直线条
 			table.SetColumnSeparator(" ")
 			for _, jobInfo := range jobInfos {
-				table.Append([]string{jobInfo.JobName, jobInfo.CheckName, jobInfo.ExpectValue, jobInfo.Status, jobInfo.Node, jobInfo.ActualValue})
+				table.Append([]string{jobInfo.JobName, jobInfo.CheckName, jobInfo.Node, jobInfo.Status, jobInfo.ExpectValue, jobInfo.ActualValue})
 				done = jobInfo.AllDone
 			}
 			table.Render()
